@@ -118,8 +118,12 @@ for cluster in cluster_lst:
 with open('/home/philip/work/reports/feature_importance/data/operations_cluster.txt','w') as out_file:
     
     out_file.write('------------------------------------------------------------------\n')
-    out_file.write('--- clusters of operations----------------------------------------\n')
-    out_file.write('------------------------------------------------------------------\n\n\n\n')
+    out_file.write('--- CLUSTERS OF OPERATIONS ---------------------------------------\n')
+    out_file.write('------------------------------------------------------------------\n')
+    out_file.write('Operation name \t\t op_id \t mop_id \t mean ustat \t perc calc\n')
+    out_file.write('------------------------------------------------------------------\n')
+    out_file.write('------------------------------------------------------------------\n\n')
+
     for tuple_cluster in tuple_cluster_lst:
         for tuple_curr in tuple_cluster:
             out_file.write('{:s}\t{:d}\t{:d}\t{:f}\t{:f}\n'.format(*tuple_curr))
