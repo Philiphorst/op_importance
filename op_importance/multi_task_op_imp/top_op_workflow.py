@@ -14,7 +14,7 @@ California, 94041, USA.
 '''
 
 import glob 
-
+import numpy as np
 
 # -- local modules modules
 import modules.feature_importance.PK_feat_array_proc as fap
@@ -24,8 +24,8 @@ import modules.feature_importance.PK_test_stats as tstat
 # -- Global parameter definition
 # ---------------------------------------------------------------------------------
 
-#mat_file_root = '/home/philip/work/OperationImportanceProject/results/reduced/'
-mat_file_root = '/home/philip/work/OperationImportanceProject/results/test/'
+mat_file_root = '/home/philip/work/OperationImportanceProject/results/reduced/'
+#mat_file_root = '/home/philip/work/OperationImportanceProject/results/test/'
 
 mat_file_paths = glob.glob(mat_file_root+'*.mat')
 # -- check if there are suitable files in the given mat_file_folder
@@ -36,20 +36,20 @@ if mat_file_paths == []:
 intermediate_data_root = '../data/'
 
 
-data_all_good_op_path = intermediate_data_root + '/data_ma.npy'
-op_id_good_path = intermediate_data_root +'/op_id_good.pckl'
+data_all_good_op_path = intermediate_data_root + '/data_all.npy'
+op_id_good_path = intermediate_data_root +'/op_id_good.npy'
 
 ustat_data_out_folder = intermediate_data_root
-all_classes_avg_out_path = intermediate_data_root
+all_classes_avg_out_path = intermediate_data_root+'/all_classes_avg.npy'
 
 
-count_op_id_min = 2 # -- minimum number of successful calculations for operation in problems
+count_op_id_min = 32 # -- minimum number of successful calculations for operation in problems
 
 # -- Are the HCTSA files calculated with old version of matlab code
 IS_FROM_OLD_MATLAB = True
 
 # -- What has to be done
-COMPUTE_COMPLETE_DATA = True    
+COMPUTE_COMPLETE_DATA = True 
 CALCULATE_U_STATS = True
 CALCULATE_ONLY_NEW_U_STATS = False
 CALCULATE_U_STATS_ALL_CLASSES_AVG = True
@@ -61,8 +61,11 @@ CALCULATE_U_STATS_ALL_CLASSES_AVG = True
     
 if COMPUTE_COMPLETE_DATA:
     data_all,op_id_good = fap.cat_data_from_matfile_root(mat_file_paths, count_op_id_min,is_from_old_matlab = IS_FROM_OLD_MATLAB,
-                               data_all_good_op_path = data_all_good_op_path,op_id_good_path = op_id_good_path)
- 
+                               data_all_good_op_path = data_all_good_op_path,op_id_good_path = op_id_good_path,is_return_masked = False)
+
+# -- Create masked array from data_all    
+# data_all = np.ma.masked_invalid(data_all)
+
 # ---------------------------------------------------------------------------------
 # -- Calculate U_statistics for the problems
 # ---------------------------------------------------------------------------------   
@@ -79,13 +82,8 @@ if CALCULATE_U_STATS:
         _,task_names = tstat.get_calculated_names(mat_file_root,HCTSA_name_search_pattern = 'HCTSA_(.*)_N_70_100_reduced.mat')
     
     u_stat_file_paths = tstat.calculate_ustat_mult_tasks(mat_file_paths,task_names,ustat_data_out_folder,is_from_old_matlab = IS_FROM_OLD_MATLAB)  
-
-if CALCULATE_U_STATS_ALL_CLASSES_AVG:
-    if not CALCULATE_U_STATS:
-        file_paths = mat_file_paths
-        _,task_names = tstat.get_calculated_names(mat_file_root,HCTSA_name_search_pattern = 'HCTSA_(.*)_N_70_100_reduced.mat')
-       
-    all_classes_avg = tstat.calculate_ustat_avg_mult_task(mat_file_paths,u_stat_file_paths,all_classes_avg_out_path ,is_from_old_matlab = IS_FROM_OLD_MATLAB)
+    if CALCULATE_U_STATS_ALL_CLASSES_AVG:
+        all_classes_avg = tstat.calculate_ustat_avg_mult_task(mat_file_paths,u_stat_file_paths,all_classes_avg_out_path ,is_from_old_matlab = IS_FROM_OLD_MATLAB)
 
 
   
