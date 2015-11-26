@@ -27,7 +27,11 @@ import modules.feature_importance.PK_test_stats as tstat
 mat_file_root = '/home/philip/work/OperationImportanceProject/results/reduced/'
 #mat_file_root = '/home/philip/work/OperationImportanceProject/results/test/'
 
+# XXX This needs to be ordered !!!
+#mat_file_paths = sorted(glob.glob(mat_file_root+'*.mat'))
 mat_file_paths = glob.glob(mat_file_root+'*.mat')
+
+
 # -- check if there are suitable files in the given mat_file_folder
 if mat_file_paths == []:
     print "No suitable data in {:s}".format(mat_file_root)
@@ -35,13 +39,17 @@ if mat_file_paths == []:
     
 intermediate_data_root = '../data/'
 
-
 data_all_good_op_path = intermediate_data_root + '/data_all.npy'
 op_id_good_path = intermediate_data_root +'/op_id_good.npy'
 
 ustat_data_out_folder = intermediate_data_root
 all_classes_avg_out_path = intermediate_data_root+'/all_classes_avg.npy'
 
+problem_names_path = intermediate_data_root+'problem_names.npy'
+
+# XXX This needs to be ordered !!!
+#np.save(problem_names_path,np.array(sorted(mat_file_paths)))
+np.save(problem_names_path,np.array(mat_file_paths))
 
 count_op_id_min = 32 # -- minimum number of successful calculations for operation in problems
 
