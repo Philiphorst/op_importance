@@ -33,24 +33,14 @@ class Workflow:
         self.stats_good_op = None
   
         
-        
-    def find_good_op_ids(self, threshold):
+                   
+    def calculate_stats(self):
         """
-        Find the features that have been successfully calculated for more then threshold problems.
-        Parameters:
-        -----------
-        threshold : int
-            Only keep features that have been calculated for at least threshold tasks.
-        
+        Calculate the statistics of the features for each task using the method given by stats_method
         """
-        # -- List of all op_ids for each task (with duplicates)
-        op_ids_tasks = [item for task in self.tasks for item in task.op_ids.tolist()]
-
-        c = collections.Counter(op_ids_tasks)
-        for key in c.keys():
-            if c[key] > threshold:
-                self.good_op_ids.append(key)
-                
+        for task in self.tasks:
+            task.calc_stats(is_keep_data = False)     
+                      
     def collect_stats_good_op_ids(self):
         """
         Collect all combined stats for each task and take stats for good operations only
@@ -76,26 +66,23 @@ class Workflow:
             stats_good_op_tmp.append(stats_good_op_ma_tmp.T)
         self.stats_good_op = np.vstack(stats_good_op_tmp)
         
-    
-    
-    def read_data(self,is_read_feature_data = True): 
+    def find_good_op_ids(self, threshold):
         """
-        Read the data for all tasks from disk using the method given by self.input_method 
+        Find the features that have been successfully calculated for more then threshold problems.
         Parameters:
         -----------
-        is_read_feature_data : bool
-            Is the feature data to be read
-        """   
-        for task in self.tasks:
-            task.read_data(is_read_feature_data = is_read_feature_data)
-            
-    def calculate_stats(self):
+        threshold : int
+            Only keep features that have been calculated for at least threshold tasks.
+        
         """
-        Calculate the statistics of the features for each task using the method given by stats_method
-        """
-        for task in self.tasks:
-            task.calc_stats(is_keep_data = False)
-            
+        # -- List of all op_ids for each task (with duplicates)
+        op_ids_tasks = [item for task in self.tasks for item in task.op_ids.tolist()]
+
+        c = collections.Counter(op_ids_tasks)
+        for key in c.keys():
+            if c[key] > threshold:
+                self.good_op_ids.append(key) 
+                                   
     def load_task_attribute(self,attribute_name,in_path_pattern): 
         """
         Load an attribute for all tasks from separate files
@@ -108,7 +95,18 @@ class Workflow:
         """      
         for task in self.tasks:
             task.load_attribute(attribute_name,in_path_pattern)
-            
+    
+    def read_data(self,is_read_feature_data = True): 
+        """
+        Read the data for all tasks from disk using the method given by self.input_method 
+        Parameters:
+        -----------
+        is_read_feature_data : bool
+            Is the feature data to be read
+        """   
+        for task in self.tasks:
+            task.read_data(is_read_feature_data = is_read_feature_data)           
+    
     def save_task_attribute(self,attribute_name,out_path_pattern):
         """
         Save an attribute of of all tasks to separate files
@@ -148,7 +146,8 @@ if __name__ == '__main__':
         workflow.load_task_attribute('tot_stats', path_pattern_task_attrib)
         
     workflow.find_good_op_ids(1)
-    
     workflow.collect_stats_good_op_ids()
+    
+    print len(workflow.good_op_ids)
     print workflow.stats_good_op
     print workflow.stats_good_op.shape
