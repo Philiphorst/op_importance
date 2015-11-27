@@ -201,14 +201,14 @@ if __name__ == '__main__':
     combine_tasks_method = 'mean'   
     combine_tasks_norm = 'zscore' 
     select_good_perf_ops_method = 'sort_asc'
-    dist_method = 'correlation'
+    similarity_method = 'correlation'
     compare_space = 'problem_stats'
     n_good_perf_ops = 50
     
     
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
     ranking_method = Feature_Stats.U_Stats(combine_pair_method)
-    redundancy_method = Reducing_Redundancy.Reducing_Redundancy(dist_method = dist_method,compare_space = compare_space)
+    redundancy_method = Reducing_Redundancy.Reducing_Redundancy(dist_method = similarity_method,compare_space = compare_space)
     
     workflow = Workflow(task_names,input_method,ranking_method,
                         combine_tasks_method = combine_tasks_method,combine_tasks_norm = combine_tasks_norm,

@@ -2,23 +2,23 @@ import modules.misc.PK_helper as hlp
 import modules.feature_importance.PK_ident_top_op as idtop
 
 class Reducing_Redundancy:
-    def __init__(self,dist_method,compare_space):
+    def __init__(self,similarity_method,compare_space):
         """
         Constructor
         Parameters:
         -----------
-        dist_method : string
+        similarity_method : string
             String secribing the method used to calculate the distance array
         compare_space : string
             String describing in which space the distance calculation is going to appen (e.g. problem_stats,feature_vals)
         """
-        if dist_method == 'correlation':
-            self.calc_dist = self.calc_dist_corr
+        if similarity_method == 'correlation':
+            self.calc_similarity = self.calc_abs_corr
             
         self.compare_space = compare_space   
         self.good_perf_op_ids = None
         self.ops_base_perf_vals = None
-        self.dist_array = None
+        self.similarity_array = None
         
     def set_parameters(self,ops_base_vals,good_op_ids,good_perf_op_ids):
         """
@@ -58,15 +58,15 @@ class Reducing_Redundancy:
         ops_base_perf_vals = ops_base_vals[:,good_perf_ind]
         return ops_base_perf_vals
     
-    def calc_dist_corr(self):
+    def calc_abs_corr(self):
         """
         Calculate the distance matrix using a correlation approach for every column in self.ops_base_perf_vals
         """
         # -- no normalisation in here as the best performing features have been picked already, potentially using normalisation
-        self.dist_array,_,_ = idtop.calc_perform_corr_mat(self.ops_base_perf_vals,norm=None, 
-                                                                                             max_feat = self.ops_base_perf_vals.shape[1])
+        self.similarity_array,_,_ = idtop.calc_perform_corr_mat(self.ops_base_perf_vals,norm=None, 
+                                                              max_feat = self.ops_base_perf_vals.shape[1])
 
-        
+ 
         
         
 class Correlation_Dist:
