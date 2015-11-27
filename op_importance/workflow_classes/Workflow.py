@@ -2,12 +2,18 @@ import numpy as np
 import Task
 import Data_Input
 import Feature_Stats
+import Reducing_Redundancy
+
 import collections
 import modules.misc.PK_helper as hlp
+import modules.feature_importance.PK_feat_array_proc as fap
+
+import matplotlib.pyplot as plt
 
 class Workflow:
     
-    def __init__(self,task_names,input_method,stats_method,combine_tasks_method = 'mean',
+    def __init__(self,task_names,input_method,stats_method,redundancy_method,combine_tasks_method = 'mean',
+                 combine_tasks_norm = 'zscore',
                  select_good_perf_ops_method = 'sort_asc',
                  n_good_perf_ops = None):
         """
@@ -20,9 +26,13 @@ class Workflow:
             The data input method used to read the data from disk. 
         stat_method : Feature_Stats
             The mehtod used to calculate the statistics
+        redundancy_method : Reducing_Redundancy   
+            The method used to reduce the redundancy in the well performing features
         combine_tasks_method : str
             The name describing the method used to combine the statistics for each task to create a single 1d arrray with 
             a single entry for every operation
+        combine_tasks_norm : str
+            The name of the normalisation method applied to the stats of each task before the statistics for each task are combined
         select_good_perf_ops_method : str
             The name describing the method used to sort the operations so the best operations come first in the self.stats_good_perf_op_comb
              and self.good_perf_op_ids
@@ -32,9 +42,18 @@ class Workflow:
         self.task_names = task_names
         self.input_method = input_method
         self.stats_method = stats_method        
-
+        self.redundancy_method = redundancy_method
+        self.combine_tasks_norm = combine_tasks_norm
+        #normalise_array(data,axis,norm_type = 'zscore')
         if combine_tasks_method == 'mean':
             self.combine_tasks = self.combine_task_stats_mean
+            
+        if combine_tasks_norm == 'zscore':
+            self.combine_task_norm_method = lambda y : fap.normalise_array(y,axis = 1,norm_type = 'zscore')[0]
+        else:
+            # -- no normlisation - id-function
+            self.combine_task_norm_method = lambda y : y
+
         if select_good_perf_ops_method == 'sort_asc':
             self.select_good_perf_ops = self.select_good_perf_ops_sort_asc
         self.n_good_perf_ops = n_good_perf_ops 
@@ -87,7 +106,20 @@ class Workflow:
         Combine the stats of all the tasks using the average over all tasks
         
         """
-        self.stats_good_op_comb = self.stats_good_op.mean(axis=0)
+        plt.plot(self.stats_good_op.T)
+        plt.plot(self.combine_task_norm_method(self.stats_good_op).T)
+        plt.show()
+        
+        self.stats_good_op_comb = self.combine_task_norm_method(self.stats_good_op).mean(axis=0)
+        #self.stats_good_op_comb = self.stats_good_op.mean(axis=0)
+        
+    def init_redundancy_method_problem_space(self):
+        """
+        Initialises the redundancy_method with the required parameters depending on the redundancy_method.compare_space
+        """
+        if self.redundancy_method.compare_space == 'problem_stats':
+            self.redundancy_method.set_parameters(self.stats_good_op,self.good_op_ids,self.good_perf_op_ids)
+        
            
     def find_good_op_ids(self, threshold):
         """
@@ -105,7 +137,8 @@ class Workflow:
         for key in c.keys():
             if c[key] > threshold:
                 self.good_op_ids.append(key) 
-        self.good_op_ids = np.array(self.good_op_ids)                           
+        self.good_op_ids = np.array(self.good_op_ids) 
+                                  
     def load_task_attribute(self,attribute_name,in_path_pattern): 
         """
         Load an attribute for all tasks from separate files
@@ -165,15 +198,22 @@ if __name__ == '__main__':
     label_regex_pattern = '.*,(.*)$'
     task_names = ['Lighting2','OliveOil']
     combine_pair_method = 'mean'
-    combine_tasks_method = 'mean'    
+    combine_tasks_method = 'mean'   
+    combine_tasks_norm = 'zscore' 
     select_good_perf_ops_method = 'sort_asc'
+    dist_method = 'correlation'
+    compare_space = 'problem_stats'
     n_good_perf_ops = 50
+    
+    
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
     ranking_method = Feature_Stats.U_Stats(combine_pair_method)
+    redundancy_method = Reducing_Redundancy.Reducing_Redundancy(dist_method = dist_method,compare_space = compare_space)
     
     workflow = Workflow(task_names,input_method,ranking_method,
-                        combine_tasks_method = combine_tasks_method,
+                        combine_tasks_method = combine_tasks_method,combine_tasks_norm = combine_tasks_norm,
                         select_good_perf_ops_method = select_good_perf_ops_method,
+                        redundancy_method = redundancy_method,
                         n_good_perf_ops = n_good_perf_ops)
 
     if False:
@@ -188,4 +228,5 @@ if __name__ == '__main__':
     workflow.collect_stats_good_op_ids()
     workflow.combine_tasks()
     workflow.select_good_perf_ops()
-    print workflow.stats_good_perf_op_comb
+    workflow.init_redundancy_method_problem_space()
+    workflow.redundancy_method.calc_dist()
