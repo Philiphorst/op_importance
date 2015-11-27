@@ -7,7 +7,9 @@ import modules.misc.PK_helper as hlp
 
 class Workflow:
     
-    def __init__(self,task_names,input_method,stats_method):
+    def __init__(self,task_names,input_method,stats_method,combine_tasks_method = 'mean',
+                 select_good_perf_ops_method = 'sort_asc',
+                 n_good_perf_ops = None):
         """
         Constructor
         Parameters:
@@ -18,11 +20,24 @@ class Workflow:
             The data input method used to read the data from disk. 
         stat_method : Feature_Stats
             The mehtod used to calculate the statistics
+        combine_tasks_method : str
+            The name describing the method used to combine the statistics for each task to create a single 1d arrray with 
+            a single entry for every operation
+        select_good_perf_ops_method : str
+            The name describing the method used to sort the operations so the best operations come first in the self.stats_good_perf_op_comb
+             and self.good_perf_op_ids
+        self.good_perf_op_ids : int, optional
+            Maximum entries in self.stats_good_perf_op_comb and self.good_perf_op_ids. If None, all good operations are used.
         """
         self.task_names = task_names
         self.input_method = input_method
         self.stats_method = stats_method        
 
+        if combine_tasks_method == 'mean':
+            self.combine_tasks = self.combine_task_stats_mean
+        if select_good_perf_ops_method == 'sort_asc':
+            self.select_good_perf_ops = self.select_good_perf_ops_sort_asc
+        self.n_good_perf_ops = n_good_perf_ops 
         # -- list of Tasks for this workflow
         self.tasks = [Task.Task(task_name,self.input_method,self.stats_method) for task_name in task_names]
 
@@ -31,8 +46,9 @@ class Workflow:
         # -- place holders 
         self.good_op_ids = []
         self.stats_good_op = None
-  
-        
+        self.stats_good_op_comb = None
+        self.stats_good_perf_op_comb = None
+        self.good_perf_op_ids = None
                    
     def calculate_stats(self):
         """
@@ -52,9 +68,9 @@ class Workflow:
             # -- create tmp array for good stats for current task. For sake of simplicity when dealing with different
             # dimensions of task.tot_stats we transpose stats_good_op_ma_tmp so row corresponds to feature temporarily
             if task.tot_stats.ndim > 1:
-                stats_good_op_ma_tmp = np.empty((len(self.good_op_ids),task.tot_stats.shape[0]))
+                stats_good_op_ma_tmp = np.empty((self.good_op_ids.shape[0],task.tot_stats.shape[0]))
             else:
-                stats_good_op_ma_tmp = np.empty((len(self.good_op_ids)))
+                stats_good_op_ma_tmp = np.empty((self.good_op_ids.shape[0]))
             stats_good_op_ma_tmp[:] = np.NaN
             
             ind = hlp.ismember(task.op_ids,self.good_op_ids,is_return_masked_array = True,return_dtype = int)
@@ -66,6 +82,13 @@ class Workflow:
             stats_good_op_tmp.append(stats_good_op_ma_tmp.T)
         self.stats_good_op = np.vstack(stats_good_op_tmp)
         
+    def combine_task_stats_mean(self):
+        """
+        Combine the stats of all the tasks using the average over all tasks
+        
+        """
+        self.stats_good_op_comb = self.stats_good_op.mean(axis=0)
+           
     def find_good_op_ids(self, threshold):
         """
         Find the features that have been successfully calculated for more then threshold problems.
@@ -82,7 +105,7 @@ class Workflow:
         for key in c.keys():
             if c[key] > threshold:
                 self.good_op_ids.append(key) 
-                                   
+        self.good_op_ids = np.array(self.good_op_ids)                           
     def load_task_attribute(self,attribute_name,in_path_pattern): 
         """
         Load an attribute for all tasks from separate files
@@ -120,8 +143,19 @@ class Workflow:
         for task in self.tasks:
             task.save_attribute(attribute_name,out_path_pattern)
             
-            
-            
+    def select_good_perf_ops_sort_asc(self):
+        """
+        Select a subset of well performing operations
+        """
+
+        sort_ind_tmp = np.argsort(self.stats_good_op_comb)
+        if self.n_good_perf_ops == None:
+            self.stats_good_perf_op_comb  = self.stats_good_op_comb[sort_ind_tmp]
+            self.good_perf_op_ids =  self.good_op_ids[sort_ind_tmp]
+        else:
+            self.stats_good_perf_op_comb  = self.stats_good_op_comb[sort_ind_tmp][:self.n_good_perf_ops]            
+            self.good_perf_op_ids =  self.good_op_ids[sort_ind_tmp][:self.n_good_perf_ops]            
+
 if __name__ == '__main__':
 
     path_pattern = '/home/philip/work/OperationImportanceProject/results/reduced/HCTSA_{:s}_N_70_100_reduced.mat'
@@ -131,11 +165,16 @@ if __name__ == '__main__':
     label_regex_pattern = '.*,(.*)$'
     task_names = ['Lighting2','OliveOil']
     combine_pair_method = 'mean'
-        
+    combine_tasks_method = 'mean'    
+    select_good_perf_ops_method = 'sort_asc'
+    n_good_perf_ops = 50
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
     ranking_method = Feature_Stats.U_Stats(combine_pair_method)
     
-    workflow = Workflow(task_names,input_method,ranking_method)
+    workflow = Workflow(task_names,input_method,ranking_method,
+                        combine_tasks_method = combine_tasks_method,
+                        select_good_perf_ops_method = select_good_perf_ops_method,
+                        n_good_perf_ops = n_good_perf_ops)
 
     if False:
         workflow.read_data()
@@ -147,7 +186,6 @@ if __name__ == '__main__':
         
     workflow.find_good_op_ids(1)
     workflow.collect_stats_good_op_ids()
-    
-    print len(workflow.good_op_ids)
-    print workflow.stats_good_op
-    print workflow.stats_good_op.shape
+    workflow.combine_tasks()
+    workflow.select_good_perf_ops()
+    print workflow.stats_good_perf_op_comb
