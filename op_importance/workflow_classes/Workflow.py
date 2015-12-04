@@ -191,12 +191,13 @@ class Workflow:
 
 if __name__ == '__main__':
 
-    path_pattern = '/home/philip/work/OperationImportanceProject/results/reduced/HCTSA_{:s}_N_70_100_reduced.mat'
+    path_pattern = '/home/bjm113/Downloads/HCTSA_{:s}_N_70_100_reduced.mat'
     path_pattern_task_attrib = "../data/intermediate_results/task_{:s}_{:s}"
 
     masking_method = 'NaN'
     label_regex_pattern = '.*,(.*)$'
-    task_names = ['Lighting2','OliveOil']
+    task_names = ['PhalangesOutlinesCorrect_TRAIN%','Ham_TRAIN%']
+    #task_names = ['Lighting2','OliveOil']
     combine_pair_method = 'mean'
     combine_tasks_method = 'mean'   
     combine_tasks_norm = 'zscore' 
@@ -206,7 +207,7 @@ if __name__ == '__main__':
     n_good_perf_ops = 50
     
     
-    input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
+    input_method = Data_Input.Database_Input(label_regex_pattern)
     ranking_method = Feature_Stats.U_Stats(combine_pair_method)
     redundancy_method = Reducing_Redundancy.Reducing_Redundancy(similarity_method = similarity_method,compare_space = compare_space)
     
@@ -216,7 +217,7 @@ if __name__ == '__main__':
                         redundancy_method = redundancy_method,
                         n_good_perf_ops = n_good_perf_ops)
 
-    if False:
+    if True:
         workflow.read_data()
         workflow.calculate_stats()
         workflow.save_task_attribute('tot_stats', path_pattern_task_attrib)
