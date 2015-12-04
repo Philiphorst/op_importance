@@ -130,14 +130,12 @@ class Datafile_Input(Data_Input):
         
 
 class Database_Input(Data_Input):
-    
-    def __init__(self, path_pattern,masking_method = 'nan',label_regex_pattern = '.*,(.*)$'):
+    #FIXME masking_method is a dummy argument, this might seem confusing 
+    def __init__(self, masking_method = 'nan',label_regex_pattern = '.*,(.*)$'):
         """
         Constructor
         Parameters:
         -----------
-        path_pattern : string
-            Pattern used to construct the path to the current matlab file.
         masking_method : string
             String describing method used for masking invalid entries
         label_regex_pattern : string, optional
@@ -149,8 +147,6 @@ class Database_Input(Data_Input):
                     
         """
         Data_Input.__init__(self,masking_method,label_regex_pattern = '.*,(.*)$')
-        # -- initialise the pattern for the home folder of the data files
-        self.path_pattern = path_pattern
         
     def input_task(self,task_name,is_read_feature_data = True):
         """
