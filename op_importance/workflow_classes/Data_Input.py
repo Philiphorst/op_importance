@@ -1,6 +1,8 @@
 import modules.misc.PK_matlab_IO as mIO
 import re
 import numpy as np
+import modules.misc.SQL_IO as sIO
+import numpy.ma as ma
 
 
 class Data_Input:
@@ -125,3 +127,72 @@ class Datafile_Input(Data_Input):
             return self.masking_method(data), keywords_ts, op_ids
         else:
             return None, keywords_ts, op_ids
+        
+
+class Database_Input(Data_Input):
+    
+    def __init__(self, path_pattern,masking_method = 'nan',label_regex_pattern = '.*,(.*)$'):
+        """
+        Constructor
+        Parameters:
+        -----------
+        path_pattern : string
+            Pattern used to construct the path to the current matlab file.
+        masking_method : string
+            String describing method used for masking invalid entries
+        label_regex_pattern : string, optional
+            The pattern used to extract the label from the keywords_ts. The label is
+            the first group of the regular expression given
+        Returns:
+        -------
+            None
+                    
+        """
+        Data_Input.__init__(self,masking_method,label_regex_pattern = '.*,(.*)$')
+        # -- initialise the pattern for the home folder of the data files
+        self.path_pattern = path_pattern
+        
+    def input_task(self,task_name,is_read_feature_data = True):
+        """
+        Read the required data from a HCTSA_loc.mat file
+        Parameters:
+        -----------
+        task_name : string
+            the name of the classification task to be imported
+        is_read_feature_data : bool
+            if true, the feature data matrix will be read (default is True)
+        Returns:
+        --------
+        data : ndarray
+            Array containing the data. Each row corresponds to a timeseries and each column to an operation.
+        keywords_ts : list
+            list containing the keywords for all timeseries (rows in data)
+        op_ids : ndarray
+            1-D array containing the operation id for each column in data
+            
+        """
+        if is_read_feature_data:
+            data , op, ts = sIO.read_from_sql_by_filename(task_name,['TS_DataMat','Operations','TimeSeries'])
+        else:
+            op, ts = sIO.read_from_sql_by_filename(task_name,['Operations','TimeSeries'])
+            data = None
+        # -- extract the op ids for the columns 
+        op_ids = np.array(op['id'])
+        keywords_ts = ts['keywords']
+        if is_read_feature_data:
+            return ma.getdata(data), keywords_ts, op_ids
+        else:
+            return None, keywords_ts, op_ids
+        
+if __name__ == '__main__':
+    
+    path_pattern = '/home/bjm113/Downloads/HCTSA_{:s}_N_70_100_reduced.mat'
+    
+    masking_method = 'NaN'
+    label_regex_pattern = '.*,(.*)$'
+    
+    input_method = Database_Input(path_pattern)
+    matlab_input_method = Datafile_Input(path_pattern)
+
+    print input_method.input_task('Coffee_%') 
+    print matlab_input_method.input_task('Lighting2')
