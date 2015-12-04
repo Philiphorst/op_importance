@@ -36,7 +36,7 @@ class Workflow:
         select_good_perf_ops_method : str
             The name describing the method used to sort the operations so the best operations come first in the self.stats_good_perf_op_comb
              and self.good_perf_op_ids
-        self.good_perf_op_ids : int, optional
+        self.n_good_perf_op_ids : int, optional
             Maximum entries in self.stats_good_perf_op_comb and self.good_perf_op_ids. If None, all good operations are used.
         """
         self.task_names = task_names
@@ -106,9 +106,6 @@ class Workflow:
         Combine the stats of all the tasks using the average over all tasks
         
         """
-        plt.plot(self.stats_good_op.T)
-        plt.plot(self.combine_task_norm_method(self.stats_good_op).T)
-        plt.show()
         
         self.stats_good_op_comb = self.combine_task_norm_method(self.stats_good_op).mean(axis=0)
         #self.stats_good_op_comb = self.stats_good_op.mean(axis=0)
@@ -196,14 +193,18 @@ if __name__ == '__main__':
 
     masking_method = 'NaN'
     label_regex_pattern = '.*,(.*)$'
-    task_names = ['Lighting2','OliveOil']
+    task_names = ['Lighting2','OliveOil','MedicalImages', 'Cricket_X']
+    
+    #task_names = ['MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X', 'Two_Patterns', 'yoga', 'Symbols', 'uWaveGestureLibrary_Z', 'SonyAIBORobotSurfaceII', 'Cricket_Y', 'Gun_Point', 'OliveOil', 'Lighting7', 'NonInvasiveFatalECG _Thorax1', 'Haptics', 'Adiac', 'ChlorineConcentration', 'synthetic_control', 'OSULeaf', 'DiatomSizeReduction', 'SonyAIBORobotSurface', 'MALLAT', 'uWaveGestureLibrary_Y', 'N', 'CBF', 'ECGFiveDays', 'Lighting2', 'FISH', 'FacesUCR', 'FaceFour', 'Trace', 'Coffee', '50words', 'MoteStrain', 'wafer', 'Cricket_Z', 'SwedishLeaf']
+
     combine_pair_method = 'mean'
     combine_tasks_method = 'mean'   
     combine_tasks_norm = 'zscore' 
+    #combine_tasks_norm = None
     select_good_perf_ops_method = 'sort_asc'
     similarity_method = 'correlation'
     compare_space = 'problem_stats'
-    n_good_perf_ops = 50
+    n_good_perf_ops = 100
     
     
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
@@ -229,4 +230,10 @@ if __name__ == '__main__':
     workflow.combine_tasks()
     workflow.select_good_perf_ops()
     workflow.init_redundancy_method_problem_space()
-    workflow.redundancy_method.calc_similarity ()
+    workflow.redundancy_method.calc_similarity()
+    workflow.redundancy_method.calc_hierch_cluster()
+    print workflow.redundancy_method.ops_base_perf_vals.shape
+    #plt.plot(workflow.redundancy_method.ops_base_perf_vals.T)
+    plt.matshow(workflow.redundancy_method.similarity_array)
+    plt.colorbar()
+    plt.show()
