@@ -13,8 +13,9 @@ import matplotlib.pyplot as plt
 class Workflow:
     
     def __init__(self,task_names,input_method,stats_method,redundancy_method,combine_tasks_method = 'mean',
-                 combine_tasks_norm = 'zscore',
+                 combine_tasks_norm = None,
                  select_good_perf_ops_method = 'sort_asc',
+                 select_good_perf_ops_norm = 'zscore',
                  n_good_perf_ops = None):
         """
         Constructor
@@ -36,6 +37,8 @@ class Workflow:
         select_good_perf_ops_method : str
             The name describing the method used to sort the operations so the best operations come first in the self.stats_good_perf_op_comb
              and self.good_perf_op_ids
+        select_good_perf_ops_norm : str
+            The name describing the norm used when combining all statistics for all tasks for each operations
         self.n_good_perf_op_ids : int, optional
             Maximum entries in self.stats_good_perf_op_comb and self.good_perf_op_ids. If None, all good operations are used.
         """
@@ -49,13 +52,15 @@ class Workflow:
             self.combine_tasks = self.combine_task_stats_mean
             
         if combine_tasks_norm == 'zscore':
-            self.combine_task_norm_method = lambda y : fap.normalise_array(y,axis = 1,norm_type = 'zscore')[0]
+            self.combine_task_norm_method = lambda y : fap.normalise_masked_array(y,axis = 1,norm_type = 'zscore')[0]
         else:
-            # -- no normlisation - id-function
+            # -- no normalisation - id-function
             self.combine_task_norm_method = lambda y : y
 
         if select_good_perf_ops_method == 'sort_asc':
             self.select_good_perf_ops = self.select_good_perf_ops_sort_asc
+        self.select_good_perf_ops_norm = select_good_perf_ops_norm
+        
         self.n_good_perf_ops = n_good_perf_ops 
         # -- list of Tasks for this workflow
         self.tasks = [Task.Task(task_name,self.input_method,self.stats_method) for task_name in task_names]
@@ -99,16 +104,15 @@ class Workflow:
                     stats_good_op_ma_tmp[i] = task.tot_stats[it].T
             # -- We return to the usual ordering: column equals feature
             stats_good_op_tmp.append(stats_good_op_ma_tmp.T)
-        self.stats_good_op = np.vstack(stats_good_op_tmp)
+        self.stats_good_op = np.ma.masked_invalid(np.vstack(stats_good_op_tmp))
+        
         
     def combine_task_stats_mean(self):
         """
         Combine the stats of all the tasks using the average over all tasks
         
         """
-        
         self.stats_good_op_comb = self.combine_task_norm_method(self.stats_good_op).mean(axis=0)
-        #self.stats_good_op_comb = self.stats_good_op.mean(axis=0)
         
     def init_redundancy_method_problem_space(self):
         """
@@ -132,7 +136,7 @@ class Workflow:
 
         c = collections.Counter(op_ids_tasks)
         for key in c.keys():
-            if c[key] > threshold:
+            if c[key] >= threshold:
                 self.good_op_ids.append(key) 
         self.good_op_ids = np.array(self.good_op_ids) 
                                   
@@ -177,8 +181,19 @@ class Workflow:
         """
         Select a subset of well performing operations
         """
-
-        sort_ind_tmp = np.argsort(self.stats_good_op_comb)
+                
+        if self.select_good_perf_ops_norm in ['z-score','zscore'] :
+            all_classes_good_norm = fap.normalise_masked_array(self.stats_good_op,axis = 1,norm_type = 'zscore')[0]
+        
+        elif self.select_good_perf_ops_norm == 'mean-norm':
+            all_classes_good_mean = np.ma.masked_invalid(np.ma.mean(self.stats_good_op,axis = 1))
+            all_classes_good_norm = (self.stats_good_op.T / all_classes_good_mean).T  
+        
+        else:
+            all_classes_good_norm =  self.stats_good_op
+            
+        sort_ind_tmp = np.argsort(all_classes_good_norm.mean(axis=0))
+        
         if self.n_good_perf_ops == None:
             self.stats_good_perf_op_comb  = self.stats_good_op_comb[sort_ind_tmp]
             self.good_perf_op_ids =  self.good_op_ids[sort_ind_tmp]
@@ -186,6 +201,7 @@ class Workflow:
             self.stats_good_perf_op_comb  = self.stats_good_op_comb[sort_ind_tmp][:self.n_good_perf_ops]            
             self.good_perf_op_ids =  self.good_op_ids[sort_ind_tmp][:self.n_good_perf_ops]            
 
+        
 if __name__ == '__main__':
 
     path_pattern = '/home/philip/work/OperationImportanceProject/results/reduced/HCTSA_{:s}_N_70_100_reduced.mat'
@@ -193,18 +209,18 @@ if __name__ == '__main__':
 
     masking_method = 'NaN'
     label_regex_pattern = '.*,(.*)$'
-    task_names = ['Lighting2','OliveOil','MedicalImages', 'Cricket_X']
+    task_names = ['Lighting2','OliveOil','MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X']
     
     #task_names = ['MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X', 'Two_Patterns', 'yoga', 'Symbols', 'uWaveGestureLibrary_Z', 'SonyAIBORobotSurfaceII', 'Cricket_Y', 'Gun_Point', 'OliveOil', 'Lighting7', 'NonInvasiveFatalECG _Thorax1', 'Haptics', 'Adiac', 'ChlorineConcentration', 'synthetic_control', 'OSULeaf', 'DiatomSizeReduction', 'SonyAIBORobotSurface', 'MALLAT', 'uWaveGestureLibrary_Y', 'N', 'CBF', 'ECGFiveDays', 'Lighting2', 'FISH', 'FacesUCR', 'FaceFour', 'Trace', 'Coffee', '50words', 'MoteStrain', 'wafer', 'Cricket_Z', 'SwedishLeaf']
 
     combine_pair_method = 'mean'
     combine_tasks_method = 'mean'   
-    combine_tasks_norm = 'zscore' 
-    #combine_tasks_norm = None
+    combine_tasks_norm = None
+    select_good_perf_ops_norm = 'zscore'
     select_good_perf_ops_method = 'sort_asc'
     similarity_method = 'correlation'
     compare_space = 'problem_stats'
-    n_good_perf_ops = 100
+    n_good_perf_ops = 500
     
     
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
@@ -213,7 +229,7 @@ if __name__ == '__main__':
     
     workflow = Workflow(task_names,input_method,ranking_method,
                         combine_tasks_method = combine_tasks_method,combine_tasks_norm = combine_tasks_norm,
-                        select_good_perf_ops_method = select_good_perf_ops_method,
+                        select_good_perf_ops_method = select_good_perf_ops_method, select_good_perf_ops_norm = select_good_perf_ops_norm,
                         redundancy_method = redundancy_method,
                         n_good_perf_ops = n_good_perf_ops)
 
@@ -225,15 +241,11 @@ if __name__ == '__main__':
         workflow.read_data(is_read_feature_data = False)
         workflow.load_task_attribute('tot_stats', path_pattern_task_attrib)
         
-    workflow.find_good_op_ids(1)
+    workflow.find_good_op_ids(8)
     workflow.collect_stats_good_op_ids()
     workflow.combine_tasks()
     workflow.select_good_perf_ops()
+    
     workflow.init_redundancy_method_problem_space()
     workflow.redundancy_method.calc_similarity()
     workflow.redundancy_method.calc_hierch_cluster()
-    print workflow.redundancy_method.ops_base_perf_vals.shape
-    #plt.plot(workflow.redundancy_method.ops_base_perf_vals.T)
-    plt.matshow(workflow.redundancy_method.similarity_array)
-    plt.colorbar()
-    plt.show()

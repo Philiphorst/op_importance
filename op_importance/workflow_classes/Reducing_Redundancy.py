@@ -65,7 +65,6 @@ class Reducing_Redundancy:
         Calculate the distance matrix using a correlation approach for every column in self.ops_base_perf_vals
         """
         # -- no normalisation in here as the best performing features have been picked already, potentially using normalisation
-
         self.similarity_array,_,_ = idtop.calc_perform_corr_mat(self.ops_base_perf_vals,norm=None, 
                                                               max_feat = self.ops_base_perf_vals.shape[1])
         
