@@ -26,7 +26,8 @@ class Task:
         self.op_ids = np.array([])
         self.pair_stats = np.ma.masked_array([])
         self.tot_stats = np.ma.masked_array([])
-               
+        self.op = dict()
+        self.ts = dict()      
     def calc_stats(self,is_keep_data = False):
         """
         Calculate the statistics using the method given by self.stat_method. Pairwise and task total. 
@@ -52,7 +53,11 @@ class Task:
         is_read_feature_data : bool
             Is the feature data to be read or not
         """
-        self.data, keywords_ts, self.op_ids = self.input_method.input_task(self.name,is_read_feature_data = is_read_feature_data)
+        #self.data, keywords_ts, self.op_ids = self.input_method.input_task(self.name,is_read_feature_data = is_read_feature_data)
+        self.data, self.ts, self.op = self.input_method.input_task(self.name,is_read_feature_data = is_read_feature_data)
+        
+        self.op_ids = np.array(self.op['id'])
+        keywords_ts = self.ts['keywords']
         self.labels = self.input_method.extract_labels(keywords_ts)
     
     def load_attribute(self,attribute_name,in_path_pattern):

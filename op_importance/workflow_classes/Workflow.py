@@ -3,6 +3,7 @@ import Task
 import Data_Input
 import Feature_Stats
 import Reducing_Redundancy
+import Plotting
 
 import collections
 import modules.misc.PK_helper as hlp
@@ -191,7 +192,7 @@ class Workflow:
         
         else:
             all_classes_good_norm =  self.stats_good_op
-            
+
         sort_ind_tmp = np.argsort(all_classes_good_norm.mean(axis=0))
         
         if self.n_good_perf_ops == None:
@@ -209,9 +210,9 @@ if __name__ == '__main__':
 
     masking_method = 'NaN'
     label_regex_pattern = '.*,(.*)$'
-    task_names = ['Lighting2','OliveOil','MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X']
+    #task_names = ['Lighting2','OliveOil','FaceFour','N', 'FISH']
     
-    #task_names = ['MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X', 'Two_Patterns', 'yoga', 'Symbols', 'uWaveGestureLibrary_Z', 'SonyAIBORobotSurfaceII', 'Cricket_Y', 'Gun_Point', 'OliveOil', 'Lighting7', 'NonInvasiveFatalECG _Thorax1', 'Haptics', 'Adiac', 'ChlorineConcentration', 'synthetic_control', 'OSULeaf', 'DiatomSizeReduction', 'SonyAIBORobotSurface', 'MALLAT', 'uWaveGestureLibrary_Y', 'N', 'CBF', 'ECGFiveDays', 'Lighting2', 'FISH', 'FacesUCR', 'FaceFour', 'Trace', 'Coffee', '50words', 'MoteStrain', 'wafer', 'Cricket_Z', 'SwedishLeaf']
+    task_names = ['MedicalImages', 'Cricket_X', 'InlineSkate', 'ECG200', 'WordsSynonyms', 'uWaveGestureLibrary_X', 'Two_Patterns', 'yoga', 'Symbols', 'uWaveGestureLibrary_Z', 'SonyAIBORobotSurfaceII', 'Cricket_Y', 'Gun_Point', 'OliveOil', 'Lighting7', 'NonInvasiveFatalECG _Thorax1', 'Haptics', 'Adiac', 'ChlorineConcentration', 'synthetic_control', 'OSULeaf', 'DiatomSizeReduction', 'SonyAIBORobotSurface', 'MALLAT', 'uWaveGestureLibrary_Y', 'N', 'CBF', 'ECGFiveDays', 'Lighting2', 'FISH', 'FacesUCR', 'FaceFour', 'Trace', 'Coffee', '50words', 'MoteStrain', 'wafer', 'Cricket_Z', 'SwedishLeaf']
 
     combine_pair_method = 'mean'
     combine_tasks_method = 'mean'   
@@ -220,7 +221,7 @@ if __name__ == '__main__':
     select_good_perf_ops_method = 'sort_asc'
     similarity_method = 'correlation'
     compare_space = 'problem_stats'
-    n_good_perf_ops = 500
+    n_good_perf_ops = 50
     
     
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
@@ -241,11 +242,31 @@ if __name__ == '__main__':
         workflow.read_data(is_read_feature_data = False)
         workflow.load_task_attribute('tot_stats', path_pattern_task_attrib)
         
-    workflow.find_good_op_ids(8)
+    workflow.find_good_op_ids(32)
     workflow.collect_stats_good_op_ids()
     workflow.combine_tasks()
     workflow.select_good_perf_ops()
     
     workflow.init_redundancy_method_problem_space()
+    # -- calculate the correlation matrix saved in workflow.redundancy_method.similarity_array
     workflow.redundancy_method.calc_similarity()
+    # -- calculate the linkage, the cluster indices and the clustering in self.corr_linkage,self.cluster_inds,self.cluster_op_id_list,respectively
     workflow.redundancy_method.calc_hierch_cluster()
+    
+    plotting = Plotting.Plotting(workflow)
+    # -- Plot the statistics array
+    #plotting.plot_stat_array()
+    # -- Plot the similarity array   
+    plotting.plot_similarity_array()
+    
+    plt.savefig('/home/philip/Desktop/tmp/figure_tmp/test.png')
+    plt.show()
+    
+    print workflow.redundancy_method.cluster_op_id_list
+    
+    
+    
+    
+    
+    
+    

@@ -45,6 +45,7 @@ class Data_Input:
         reg_ex = re.compile(regex_pattern) # --  pick the substring after the last comma
         # FIXME some sort of error handling would be useful 
         labels = np.array([reg_ex.match(keywords).group(1) for keywords in keywords_ts])
+
         return labels
    
 #     def remove_bad_ops(self,data,op_id,threshold = 1.):
@@ -104,10 +105,12 @@ class Datafile_Input(Data_Input):
         --------
         data : ndarray
             Array containing the data. Each row corresponds to a timeseries and each column to an operation.
-        keywords_ts : list
-            list containing the keywords for all timeseries (rows in data)
-        op_ids : ndarray
-            1-D array containing the operation id for each column in data
+        ts : dict
+            dictionary containing the information for all timeseries (rows in data). 
+            ['keywords', 'n_samples', 'id', 'filename']
+        op : dict
+            dictionary containing the information for all contained operations. 
+            Keys are ['keywords', 'master_id', 'id', 'code_string', 'name']
             
         """
         # -- assemble the file path
@@ -118,10 +121,8 @@ class Datafile_Input(Data_Input):
         else:
             op, ts = mIO.read_from_mat_file(mat_file_path,['Operations','TimeSeries'],is_from_old_matlab = True)
             data = None
-        # -- extract the op ids for the columns 
-        op_ids = np.array(op['id'])
-        keywords_ts = ts['keywords']
+        
         if is_read_feature_data:
-            return self.masking_method(data), keywords_ts, op_ids
+            return self.masking_method(data), ts, op
         else:
-            return None, keywords_ts, op_ids
+            return None, ts, op
