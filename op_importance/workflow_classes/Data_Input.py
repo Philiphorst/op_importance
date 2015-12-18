@@ -88,7 +88,7 @@ class Datafile_Input(Data_Input):
             None
                     
         """
-        Data_Input.__init__(self,masking_method,label_regex_pattern = '.*,(.*)$')
+        Data_Input.__init__(self,masking_method,label_regex_pattern = label_regex_pattern)
         # -- initialise the pattern for the home folder of the data files
         self.path_pattern = path_pattern
         
