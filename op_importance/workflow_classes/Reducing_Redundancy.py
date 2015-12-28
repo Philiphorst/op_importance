@@ -11,7 +11,7 @@ class Reducing_Redundancy:
         similarity_method : string
             String secribing the method used to calculate the distance array
         compare_space : string
-            String describing in which space the distance calculation is going to appen (e.g. problem_stats,feature_vals)
+            String describing in which space the distance calculation is going to happen (e.g. problem_stats,feature_vals)
         """
         if similarity_method == 'correlation':
             self.calc_similarity = self.calc_abs_corr
