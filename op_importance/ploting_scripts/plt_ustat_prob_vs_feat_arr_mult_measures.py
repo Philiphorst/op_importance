@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import modules.feature_importance.PK_ident_top_op as idtop
+import modules.feature_importance.PK_feat_array_proc as fap
 import modules.feature_importance.PK_test_stats as testst
 import scipy.cluster.hierarchy as hierarchy
 import modules.misc.PK_helper as hlp
@@ -89,7 +90,7 @@ feat_sort_ind = corr_dendrogram['leaves']
 porblem_sort_ind = np.argsort(all_classes_avg_top[:,feat_sort_ind].mean(axis=1))
 print porblem_sort_ind
 #all_classes_avg_top = ((all_classes_avg_top - np.ma.mean(all_classes_avg_top,axis=0)) / np.ma.std(all_classes_avg_top,axis=0))
-
+all_classes_avg_top = fap.normalise_masked_array(all_classes_avg_top, axis= 1,norm_type = 'zscore')[0]
 # -- plot the operation names as y-axis tick labels
 ax_ustat_arr.matshow(all_classes_avg_top[porblem_sort_ind,:][:,feat_sort_ind].T,aspect=39/float(50),origin='bottom')
 ax_ustat_arr.set_yticks(range(len(feat_sort_ind)))
@@ -193,9 +194,11 @@ else:
 ax_measures10.plot(x_loc,avg_min_u_score[porblem_sort_ind],marker='o',label='avg. min. U-score all') 
 ax_measures10.legend(loc=2,fontsize='small',labelspacing=.1)
 ax_measures10.set_ylabel('u-score')
-# print (~all_classes_avg_masked_sort.mask).sum(axis=1)
+
 # ax_measures1.plot(x_loc,(~all_classes_avg_masked_sort.mask).sum(axis=1))
-plt.savefig('/home/philip/Desktop/tmp/figure_tmp/u_stat_array.png')
+#plt.savefig('/home/philip/Desktop/tmp/figure_tmp/u_stat_array.png')
+#plt.savefig('/home/philip/Desktop/tmp/figure_tmp/u_stat_array_z_column.png')
+
 plt.show()
 
 
