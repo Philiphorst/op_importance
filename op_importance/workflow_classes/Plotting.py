@@ -57,7 +57,6 @@ class Plotting:
         
         # -- number of problems for which each good performing feature has been calculated
         measures[0,:] = (~self.workflow.stats_good_op[:,tmp_ind].mask).sum(axis=0)
-        print measures[0,:]
         # -- z scored u-stat(for all features) for top features 
         stats_good_op_z_score = fap.normalise_masked_array(self.workflow.stats_good_op_comb, axis= 0,norm_type = 'zscore')[0]
         measures[1,:] = stats_good_op_z_score[tmp_ind]
