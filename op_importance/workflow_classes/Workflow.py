@@ -75,12 +75,12 @@ class Workflow:
         self.stats_good_perf_op_comb = None
         self.good_perf_op_ids = None
                    
-    def calculate_stats(self):
+    def calculate_stats(self,is_keep_data = False):
         """
         Calculate the statistics of the features for each task using the method given by stats_method
         """
         for task in self.tasks:
-            task.calc_stats(is_keep_data = False)     
+            task.calc_stats(is_keep_data = is_keep_data)     
                       
     def collect_stats_good_op_ids(self):
         """
@@ -207,7 +207,10 @@ if __name__ == '__main__':
 
     path_pattern = '/home/philip/work/OperationImportanceProject/results/reduced/HCTSA_{:s}_N_70_100_reduced.mat'
     path_pattern_task_attrib = "../data/intermediate_results/task_{:s}_{:s}"
-
+    plot_out_path = '/home/philip/Desktop/tmp/figure_tmp/test.png'
+    result_txt_outpath = '/home/philip/Desktop/tmp/figure_tmp/result_txt.txt'
+    
+    
     masking_method = 'NaN'
     label_regex_pattern = '.*,(.*)$'
     #task_names = ['Lighting2','OliveOil','FaceFour','N', 'FISH']
@@ -255,14 +258,21 @@ if __name__ == '__main__':
     
     plotting = Plotting.Plotting(workflow)
     # -- Plot the statistics array
-    #plotting.plot_stat_array()
+    plotting.plot_stat_array()
     # -- Plot the similarity array   
-    plotting.plot_similarity_array()
+    #plotting.plot_similarity_array()
     
-    plt.savefig('/home/philip/Desktop/tmp/figure_tmp/test.png')
+    plt.savefig(plot_out_path)
     plt.show()
+    op_id_name_map = plotting.map_op_id_name_mult_task(workflow.tasks)
     
-    print workflow.redundancy_method.cluster_op_id_list
+    # -- write not reduced top performing features to text file
+    with open(result_txt_outpath,'wb') as out_result_txt_file:
+        for op_id,op_name,op_U in zip(workflow.good_perf_op_ids,
+                                      hlp.ind_map_subset(op_id_name_map[0],op_id_name_map[1], workflow.good_perf_op_ids),
+                                      workflow.stats_good_perf_op_comb):
+            out_result_txt_file.write("{:d} {:s} {:f}\n".format(op_id,op_name,op_U))
+
     
     
     
