@@ -204,7 +204,10 @@ class Workflow:
 
         
 if __name__ == '__main__':
-
+    
+    # -----------------------------------------------------------------
+    # -- Set Parameters -----------------------------------------------
+    # -----------------------------------------------------------------
     path_pattern = '/home/philip/work/OperationImportanceProject/results/reduced/HCTSA_{:s}_N_70_100_reduced.mat'
     path_pattern_task_attrib = "../data/intermediate_results/task_{:s}_{:s}"
     plot_out_path = '/home/philip/Desktop/tmp/figure_tmp/test.png'
@@ -225,7 +228,11 @@ if __name__ == '__main__':
     similarity_method = 'correlation'
     compare_space = 'problem_stats'
     n_good_perf_ops = 50
+    min_calc_tasks = 32
     
+    # -----------------------------------------------------------------
+    # -- Initialise Class instances -----------------------------------
+    # -----------------------------------------------------------------
     
     input_method = Data_Input.Datafile_Input(path_pattern,masking_method,label_regex_pattern)
     ranking_method = Feature_Stats.U_Stats(combine_pair_method)
@@ -236,7 +243,12 @@ if __name__ == '__main__':
                         select_good_perf_ops_method = select_good_perf_ops_method, select_good_perf_ops_norm = select_good_perf_ops_norm,
                         redundancy_method = redundancy_method,
                         n_good_perf_ops = n_good_perf_ops)
-
+    
+    # -----------------------------------------------------------------
+    # -- Do the statistic calculations --------------------------------
+    # -----------------------------------------------------------------    
+    
+    # -- calculate the statistics
     if False:
         workflow.read_data()
         workflow.calculate_stats()
@@ -244,26 +256,46 @@ if __name__ == '__main__':
     else:
         workflow.read_data(is_read_feature_data = False)
         workflow.load_task_attribute('tot_stats', path_pattern_task_attrib)
-        
-    workflow.find_good_op_ids(32)
+    
+    # -- find the features which are calculated for at least min_calc_tasks tasks
+    workflow.find_good_op_ids(min_calc_tasks)
+    # -- Collect all combined stats for each task and take stats for good operations only
     workflow.collect_stats_good_op_ids()
+    # -- Combine the stats of all the tasks 
     workflow.combine_tasks()
+    # -- Select a subset of well performing operations
     workflow.select_good_perf_ops()
     
+    # -----------------------------------------------------------------
+    # -- Do the redundancy calculations -------------------------------
+    # -----------------------------------------------------------------     
+    
+    # -- intitialise the redundancy method with the calculated results
     workflow.init_redundancy_method_problem_space()
     # -- calculate the correlation matrix saved in workflow.redundancy_method.similarity_array
     workflow.redundancy_method.calc_similarity()
     # -- calculate the linkage, the cluster indices and the clustering in self.corr_linkage,self.cluster_inds,self.cluster_op_id_list,respectively
     workflow.redundancy_method.calc_hierch_cluster()
     
+    # -----------------------------------------------------------------
+    # -- Do the plotting ----------------------------------------------
+    # -----------------------------------------------------------------     
+    # -- initialise the plotting class
     plotting = Plotting.Plotting(workflow)
-    # -- Plot the statistics array
-    plotting.plot_stat_array()
-    # -- Plot the similarity array   
-    #plotting.plot_similarity_array()
+    if True:
+        # -- Plot the statistics array
+        plotting.plot_stat_array()
+    else:
+        # -- Plot the similarity array   
+        plotting.plot_similarity_array()
     
     plt.savefig(plot_out_path)
     plt.show()
+    
+    
+    # -----------------------------------------------------------------
+    # -- Output the results to text file-------------------------------
+    # -----------------------------------------------------------------       
     op_id_name_map = plotting.map_op_id_name_mult_task(workflow.tasks)
     
     # -- write not reduced top performing features to text file
