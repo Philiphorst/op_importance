@@ -1,6 +1,7 @@
 import modules.misc.PK_helper as hlp
 import modules.feature_importance.PK_ident_top_op as idtop
 import scipy.cluster.hierarchy as hierarchy
+import numpy as np
 
 class Reducing_Redundancy:
     def __init__(self,similarity_method,compare_space):
@@ -88,7 +89,37 @@ class Reducing_Redundancy:
         self.cluster_op_id_list = [[] for x in xrange(self.cluster_inds.max())]
         for i,cluster_ind in enumerate(self.cluster_inds):
             self.cluster_op_id_list[cluster_ind-1].append(self.similarity_array_op_ids[i])
-
+            
+    def write_cluster_file(self,out_path,op_id_name_map,measures):
+        """ Write text file containing operation names arranged in their respective clusters
+        Parameters:
+        -----------
+        out_path : string
+            path to which the results are written
+        op_id_name_map : list of lists
+            A list of lists where the first sub-list corresponds to the operation id and the 
+            second sub-list to the operation name as returned e.g. by PLOTTING.map_op_id_name_mult_task()
+        measures : list of lists
+            A list of lists where the first sub-list corresponds to the operation id the second sub-list the 
+            number of problems for which the operation has been calculated successfully and the third is
+            the z-scored average u-stat for each operation.
+        """
+        with open(out_path,'w') as out_file:
+            out_file.write('------------------------------------------------------------------\n')
+            out_file.write('--- clusters of operations----------------------------------------\n')
+            out_file.write('--- name, n problems calculated, avg z-scored u-stat\n')
+            out_file.write('------------------------------------------------------------------\n')
+            for cluster in self.cluster_op_id_list:
+                #cluster.sort()
+                for op in cluster:
+                    ind_tmp = np.nonzero(measures[0]==op)[0]
+                    name = op_id_name_map[1][op_id_name_map[0].index(op)]
+                    n_calc = measures[1][ind_tmp]
+                    norm_ustat = measures[2][ind_tmp]
+                    out_file.write('{:s},{:d},{:1.2f}\n'.format(name,int(n_calc[0]),norm_ustat[0]))
+                out_file.write('------------------------------------------------------------------\n')
+        
+        
         
 class Correlation_Dist:
     def __init__(self):

@@ -61,7 +61,7 @@ class Plotting:
         stats_good_op_z_score = fap.normalise_masked_array(self.workflow.stats_good_op_comb, axis= 0,norm_type = 'zscore')[0]
         measures[1,:] = stats_good_op_z_score[tmp_ind]
         
-        fiplt.plot_arr_dendrogram(abs_corr_array,names,measures = measures)
+        fiplt.plot_arr_dendrogram(abs_corr_array,names,max_dist_cluster=self.max_dist_cluster,measures = measures)
         
         #abs_corr_array,sort_good_ind,all_classes_avg_good_norm = idtop.calc_perform_corr_mat(self.workflow.stats_good_op,norm='z-score')
         

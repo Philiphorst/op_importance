@@ -227,8 +227,10 @@ if __name__ == '__main__':
     select_good_perf_ops_method = 'sort_asc'
     similarity_method = 'correlation'
     compare_space = 'problem_stats'
-    n_good_perf_ops = 50
+    n_good_perf_ops = 200
     min_calc_tasks = 32
+    # -- max distance inside one cluster
+    max_dist_cluster = 0.3
     
     # -----------------------------------------------------------------
     # -- Initialise Class instances -----------------------------------
@@ -275,14 +277,16 @@ if __name__ == '__main__':
     # -- calculate the correlation matrix saved in workflow.redundancy_method.similarity_array
     workflow.redundancy_method.calc_similarity()
     # -- calculate the linkage, the cluster indices and the clustering in self.corr_linkage,self.cluster_inds,self.cluster_op_id_list,respectively
-    workflow.redundancy_method.calc_hierch_cluster()
+    workflow.redundancy_method.calc_hierch_cluster(t = max_dist_cluster)
     
+   
     # -----------------------------------------------------------------
     # -- Do the plotting ----------------------------------------------
     # -----------------------------------------------------------------     
     # -- initialise the plotting class
-    plotting = Plotting.Plotting(workflow)
-    if True:
+    plotting = Plotting.Plotting(workflow,max_dist_cluster = max_dist_cluster)
+    
+    if False:
         # -- Plot the statistics array
         plotting.plot_stat_array()
     else:
@@ -290,20 +294,38 @@ if __name__ == '__main__':
         plotting.plot_similarity_array()
     
     plt.savefig(plot_out_path)
-    plt.show()
+
     
     
     # -----------------------------------------------------------------
     # -- Output the results to text file-------------------------------
     # -----------------------------------------------------------------       
     op_id_name_map = plotting.map_op_id_name_mult_task(workflow.tasks)
+    # -- write not reduced top performing features indicating the respective clusters they belong to
+    # -- number of problems for which each good performing feature has been calculated
+    measures = np.zeros((3,len(workflow.good_op_ids)))
+    # -- op_ids
+    measures[0,:] =  workflow.good_op_ids
+    # -- number of problems calculated
+    measures[1,:] = (~workflow.stats_good_op.mask).sum(axis=0)
+    # -- z scored u-stat
+    measures[2,:] = fap.normalise_masked_array(workflow.stats_good_op_comb, axis= 0,norm_type = 'zscore')[0]
+   
+    # -- write textfile containing the information as shown in the plot     
+    workflow.redundancy_method.write_cluster_file(result_txt_outpath,op_id_name_map,measures) 
     
+    
+    # -----------------------------------------------------------------    
+    # -- show the plot as last task of the script
+    # -----------------------------------------------------------------    
+    plt.show()
+
     # -- write not reduced top performing features to text file
-    with open(result_txt_outpath,'wb') as out_result_txt_file:
-        for op_id,op_name,op_U in zip(workflow.good_perf_op_ids,
-                                      hlp.ind_map_subset(op_id_name_map[0],op_id_name_map[1], workflow.good_perf_op_ids),
-                                      workflow.stats_good_perf_op_comb):
-            out_result_txt_file.write("{:d} {:s} {:f}\n".format(op_id,op_name,op_U))
+#     with open(result_txt_outpath,'wb') as out_result_txt_file:
+#         for op_id,op_name,op_U in zip(workflow.good_perf_op_ids,
+#                                       hlp.ind_map_subset(op_id_name_map[0],op_id_name_map[1], workflow.good_perf_op_ids),
+#                                       workflow.stats_good_perf_op_comb):
+#             out_result_txt_file.write("{:d} {:s} {:f}\n".format(op_id,op_name,op_U))
 
     
     
